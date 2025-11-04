@@ -643,9 +643,9 @@ if app_mode == 'risk_only':
 else:  # modo 'integrated'
     page_list = [
         "Visão Geral (Dashboard)",
-        "Análise de Indicadores",
         "Ficha Individual do Risco",
         "Simulador de Controles",
+        "Análise de Indicadores",
         "Análise Detalhada (Tabelas)"
     ]
 
@@ -680,4 +680,5 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
 
