@@ -285,7 +285,7 @@ def render_page_visao_geral(df_mapa):
         fig_class = px.bar(
             df_class, x='classificacao', y='count', title="Contagem de Riscos por Classificação",
             labels={'classificacao': FRIENDLY_NAMES['classificacao'], 'count': FRIENDLY_NAMES['contagem']},
-            text_auto=True, color_discrete_sequence=['#616161']
+            text_auto=True, color_discrete_sequence=['#003366']
         )
         fig_class.update_layout(xaxis_title=FRIENDLY_NAMES['classificacao'], yaxis_title=FRIENDLY_NAMES['contagem'],
                                 margin=dict(l=0, r=0, t=40, b=0))
@@ -295,7 +295,7 @@ def render_page_visao_geral(df_mapa):
         fig_gestor = px.bar(
             df_gestor, x='gestor_risco', y='count', title="Contagem de Riscos por Gestor",
             labels={'gestor_risco': FRIENDLY_NAMES['gestor_risco'], 'count': FRIENDLY_NAMES['contagem']},
-            text_auto=True, color_discrete_sequence=['#616161']
+            text_auto=True, color_discrete_sequence=['#0E6E52']
         )
         fig_gestor.update_layout(xaxis_title=FRIENDLY_NAMES['gestor_risco'], yaxis_title=FRIENDLY_NAMES['contagem'],
                                  margin=dict(l=0, r=0, t=40, b=0))
@@ -680,3 +680,4 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
