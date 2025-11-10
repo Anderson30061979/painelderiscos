@@ -431,35 +431,27 @@ def render_page_monitoramento(df_indicadores):
 
     st.divider()
 
-    # --- (ATUALIZADO) KPIs de Status com CSS e CÁLCULO CORRIGIDO ---
+    # --- KPIs de Status com CÁLCULO CORRIGIDO ---
     st.subheader(f"Status: {indicador_selecionado}")
 
     # Prepara os valores
     meta_val = pd.to_numeric(data_indicador[COL_IND_VALOR], errors='coerce')
     realizado_val = pd.to_numeric(data_indicador[COL_IND_REALIZADO], errors='coerce')
 
-    # (CORREÇÃO 1) Multiplica o valor decimal por 100
     alcance_decimal = pd.to_numeric(data_indicador[COL_IND_ALCANCE], errors='coerce')
     alcance_val = alcance_decimal * 100 if pd.notna(alcance_decimal) else pd.NA
 
-    parametro = data_indicador[COL_IND_PARAMETRO]
-
-    # (CORREÇÃO 2) Formata os valores corretos para exibição
+    # Formata os valores para exibição
     meta_str = f"{meta_val:,.2f}" if pd.notna(meta_val) else str(data_indicador[COL_IND_VALOR])
     realizado_str = f"{realizado_val:,.2f}" if pd.notna(realizado_val) else "N/A"
-    alcance_str = f"{alcance_val:.1f}%" if pd.notna(alcance_val) else "N/A"  # <-- Agora está correto
+    alcance_str = f"{alcance_val:.1f}%" if pd.notna(alcance_val) else "N/A"
 
-    # (CORREÇÃO 3) Lógica de Cor agora usa o valor percentual (ex: 100.0)
-    alcance_class = "neutral"  # Padrão é azul
+    # --- (LÓGICA DE COR ATUALIZADA) ---
+    alcance_class = "neutral"  # Padrão
     if pd.notna(alcance_val):
-        is_good = False
-        if "Quanto maior" in parametro:
-            is_good = (alcance_val >= 100.0)
-        elif "Quanto menor" in parametro:
-            # Assumindo 100% = meta, <= 100% = superou (bom)
-            is_good = (alcance_val <= 100.0)
-
-        alcance_class = "alcance-bom" if is_good else "alcance-ruim"
+        # Lógica simplificada: >= 100 é bom, < 100 é ruim.
+        alcance_class = "alcance-bom" if alcance_val >= 100.0 else "alcance-ruim"
+    # ------------------------------------
 
     kpi1, kpi2, kpi3 = st.columns(3)
     with kpi1:
@@ -825,6 +817,7 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
 
 
 
