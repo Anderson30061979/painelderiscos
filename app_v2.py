@@ -8,7 +8,7 @@ SHEET_MAPA = "Mapa de Riscos"
 SHEET_PLANO = "Plano de Respostas"
 SHEET_INDICADORES = "1.1. Plano de Ação"
 
-# --- (ATUALIZADO) Nomes das Colunas (Programático) ---
+# --- Nomes das Colunas (Programático) ---
 
 # Colunas dos arquivos de Risco (sem mudança)
 mapa_cols = [
@@ -21,7 +21,7 @@ plano_cols = [
     'col_vazia', 'acao_estrategica', 'evento_risco', 'causas', 'resposta',
     'o_que', 'quando', 'onde', 'por_que', 'por_quem', 'como', 'custo'
 ]
-# (ATUALIZADO) Colunas programáticas para '1.1. Plano de Ação' (28 colunas)
+# Colunas programáticas para '1.1. Plano de Ação' (28 colunas)
 indicadores_cols = [
     'objetivo_estrategico', 'iniciativa', 'acao_estrategica', 'situacao_acao', 'responsavel_acao',  # A-E
     'ind_titulo', 'ind_formula', 'ind_unidade', 'ind_sit_inicial', 'ind_valor', 'ind_parametro',  # F-K
@@ -784,10 +784,10 @@ if app_mode == 'risk_only':
 else:  # modo 'integrated'
     page_list = [
         "Visão Geral (Dashboard)",
-        "Análise de Indicadores",
-        "Monitoramento de Indicadores",  # <-- (NOVO)
         "Ficha Individual do Risco",
         "Simulador de Controles",
+        "Análise de Indicadores",
+        "Monitoramento de Indicadores",  # <-- (NOVO)
         "Análise Detalhada (Tabelas)"
     ]
 
@@ -825,6 +825,7 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
 
 
 
