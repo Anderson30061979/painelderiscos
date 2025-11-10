@@ -412,15 +412,15 @@ def render_page_monitoramento(df_indicadores):
         "1. Selecione a Ação Estratégica:",
         lista_acoes
     )
-
+    
     df_acoes_filtrado = df_indicadores[df_indicadores[COL_ACAO] == acao_selecionada]
     lista_indicadores = df_acoes_filtrado[COL_IND_TITULO].unique()
-
+    
     indicador_selecionado = st.selectbox(
         "2. Selecione o Indicador para Monitorar:",
         lista_indicadores
     )
-
+    
     # --- Extração de Dados ---
     try:
         df_indicador_selecionado = df_acoes_filtrado[df_acoes_filtrado[COL_IND_TITULO] == indicador_selecionado]
@@ -428,31 +428,45 @@ def render_page_monitoramento(df_indicadores):
     except IndexError:
         st.error("Erro ao selecionar o indicador. Tente novamente.")
         st.stop()
-
+        
     st.divider()
 
-    # --- KPIs de Status com CÁLCULO CORRIGIDO ---
-    st.subheader(f"Status: {indicador_selecionado}")
+    # --- (NOVO) Card de Características do Indicador ---
+    st.subheader(f"Detalhes: {indicador_selecionado}")
+    st.markdown(
+        f"""
+        <div class="indicator-card">
+            <p><strong>{FRIENDLY_NAMES[COL_ACAO]}:</strong> {data_indicador[COL_ACAO]}</p>
+            <p><strong>{FRIENDLY_NAMES[COL_IND_FORMULA]}:</strong> {data_indicador[COL_IND_FORMULA]}</p>
+            <p><strong>{FRIENDLY_NAMES[COL_IND_PARAMETRO]}:</strong> {data_indicador[COL_IND_PARAMETRO]}</p>
+            <p><strong>{FRIENDLY_NAMES[COL_IND_SIT_INICIAL]}:</strong> {data_indicador[COL_IND_SIT_INICIAL]}</p>
+            <p><strong>{FRIENDLY_NAMES[COL_IND_UNIDADE]}:</strong> {data_indicador[COL_IND_UNIDADE]}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write("") # Espaço
 
+    # --- KPIs de Status com CÁLCULO CORRIGIDO ---
+    st.subheader(f"Status de Acompanhamento")
+    
     # Prepara os valores
     meta_val = pd.to_numeric(data_indicador[COL_IND_VALOR], errors='coerce')
     realizado_val = pd.to_numeric(data_indicador[COL_IND_REALIZADO], errors='coerce')
-
+    
     alcance_decimal = pd.to_numeric(data_indicador[COL_IND_ALCANCE], errors='coerce')
     alcance_val = alcance_decimal * 100 if pd.notna(alcance_decimal) else pd.NA
-
+    
     # Formata os valores para exibição
     meta_str = f"{meta_val:,.2f}" if pd.notna(meta_val) else str(data_indicador[COL_IND_VALOR])
     realizado_str = f"{realizado_val:,.2f}" if pd.notna(realizado_val) else "N/A"
     alcance_str = f"{alcance_val:.1f}%" if pd.notna(alcance_val) else "N/A"
 
-    # --- (LÓGICA DE COR ATUALIZADA) ---
-    alcance_class = "neutral"  # Padrão
+    # Lógica de Cor
+    alcance_class = "neutral" # Padrão
     if pd.notna(alcance_val):
-        # Lógica simplificada: >= 100 é bom, < 100 é ruim.
         alcance_class = "alcance-bom" if alcance_val >= 100.0 else "alcance-ruim"
-    # ------------------------------------
-
+            
     kpi1, kpi2, kpi3 = st.columns(3)
     with kpi1:
         st.markdown(kpi_card(FRIENDLY_NAMES[COL_IND_VALOR], meta_str, "neutral"), unsafe_allow_html=True)
@@ -461,37 +475,38 @@ def render_page_monitoramento(df_indicadores):
     with kpi3:
         st.markdown(kpi_card(FRIENDLY_NAMES[COL_IND_ALCANCE], alcance_str, alcance_class), unsafe_allow_html=True)
 
-    st.write("")  # Espaço
+    
+    st.write("") # Espaço
 
     # --- Gráfico de Evolução (Sem alterações) ---
     st.subheader("Evolução Mensal vs. Meta")
-
-    df_meses = df_indicador_selecionado[COL_MESES]
-    df_meses_numeric = df_meses.apply(pd.to_numeric, errors='coerce')
-
+    
+    df_meses = df_indicador_selecionado[COL_MESES] 
+    df_meses_numeric = df_meses.apply(pd.to_numeric, errors='coerce') 
+    
     if df_meses_numeric.isnull().all().all():
         st.warning("Não há dados de acompanhamento mensal (Mês 01 a Mês 12) preenchidos para este indicador.")
     else:
         df_melted = df_meses_numeric.melt(var_name="Mês", value_name="Realizado (mês)")
         df_melted['Mês Num'] = df_melted['Mês'].str.replace('mes_', '').astype(int)
         df_melted = df_melted.sort_values(by='Mês Num')
-
+        
         fig = px.line(
-            df_melted,
-            x='Mês',
-            y='Realizado (mês)',
+            df_melted, 
+            x='Mês', 
+            y='Realizado (mês)', 
             title=f"Evolução: {indicador_selecionado}",
             markers=True
         )
-
+        
         if pd.notna(meta_val):
             fig.add_hline(
-                y=meta_val,
-                line_dash="dash",
-                line_color="red",
+                y=meta_val, 
+                line_dash="dash", 
+                line_color="red", 
                 annotation_text="Meta"
             )
-
+            
         fig.update_layout(xaxis_title="Meses de Acompanhamento", yaxis_title=data_indicador[COL_IND_UNIDADE])
         st.plotly_chart(fig, use_container_width=True)
 
@@ -817,6 +832,7 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
 
 
 
