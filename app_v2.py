@@ -8,25 +8,7 @@ SHEET_MAPA = "Mapa de Riscos"
 SHEET_PLANO = "Plano de Respostas"
 SHEET_INDICADORES = "1.1. Plano de Ação"
 
-# --- Nomes das Colunas (Programático) ---
-# (Estes são os nomes que esperamos encontrar na LINHA 10 (header=9) do Excel)
-COL_OBJETIVO = "objetivo_estrategico"
-COL_INICIATIVA = "iniciativa"
-COL_ACAO = "acao_estrategica"  # <-- Nossa CHAVE de ligação
-COL_IND_TITULO = "ind_titulo"
-COL_IND_FORMULA = "ind_formula"
-COL_IND_UNIDADE = "ind_unidade"
-COL_IND_SIT_INICIAL = "ind_sit_inicial"
-COL_IND_VALOR = "ind_valor"
-COL_IND_PARAMETRO = "ind_parametro"
-
-# Lista de colunas que vamos extrair da aba de indicadores
-INDICADORES_COLS_REQUERIDAS = [
-    COL_OBJETIVO, COL_INICIATIVA, COL_ACAO,
-    COL_IND_TITULO, COL_IND_FORMULA, COL_IND_UNIDADE,
-    COL_IND_SIT_INICIAL, COL_IND_VALOR, COL_IND_PARAMETRO
-]
-INDICADORES_COLS_FFILL = [COL_OBJETIVO, COL_INICIATIVA, COL_ACAO]
+# --- (ATUALIZADO) Nomes das Colunas (Programático) ---
 
 # Colunas dos arquivos de Risco (sem mudança)
 mapa_cols = [
@@ -39,16 +21,45 @@ plano_cols = [
     'col_vazia', 'acao_estrategica', 'evento_risco', 'causas', 'resposta',
     'o_que', 'quando', 'onde', 'por_que', 'por_quem', 'como', 'custo'
 ]
-# (NOVO) Colunas programáticas para '1.1. Plano de Ação' (28 colunas)
+# (ATUALIZADO) Colunas programáticas para '1.1. Plano de Ação' (28 colunas)
 indicadores_cols = [
     'objetivo_estrategico', 'iniciativa', 'acao_estrategica', 'situacao_acao', 'responsavel_acao',  # A-E
     'ind_titulo', 'ind_formula', 'ind_unidade', 'ind_sit_inicial', 'ind_valor', 'ind_parametro',  # F-K
     'mes_01', 'mes_02', 'mes_03', 'mes_04', 'mes_05', 'mes_06',  # L-Q
     'mes_07', 'mes_08', 'mes_09', 'mes_10', 'mes_11', 'mes_12',  # R-W
-    'unnamed_23', 'unnamed_24', 'calc_painel', 'unnamed_26', 'unnamed_27'  # X-AB
+    'ind_realizado',  # X (Unnamed: 23)
+    'ind_alcance_meta',  # Y (Unnamed: 24)
+    'ind_status_painel',  # Z (Para o cálculo no painel)
+    'unnamed_26', 'unnamed_27'  # AA-AB
 ]
 
-# --- Dicionário de Nomes Amigáveis para Exibição ---
+# (ATUALIZADO) Constantes programáticas
+COL_OBJETIVO = "objetivo_estrategico"
+COL_INICIATIVA = "iniciativa"
+COL_ACAO = "acao_estrategica"
+COL_IND_TITULO = "ind_titulo"
+COL_IND_FORMULA = "ind_formula"
+COL_IND_UNIDADE = "ind_unidade"
+COL_IND_SIT_INICIAL = "ind_sit_inicial"
+COL_IND_VALOR = "ind_valor"
+COL_IND_PARAMETRO = "ind_parametro"
+# (NOVAS) Constantes para Monitoramento
+COL_IND_REALIZADO = "ind_realizado"
+COL_IND_ALCANCE = "ind_alcance_meta"
+COL_MESES = [f"mes_{i:02d}" for i in range(1, 13)]  # ['mes_01', 'mes_02', ...]
+
+# (ATUALIZADO) Lista de colunas que vamos extrair da aba de indicadores
+INDICADORES_COLS_REQUERIDAS = [
+                                  COL_OBJETIVO, COL_INICIATIVA, COL_ACAO,
+                                  COL_IND_TITULO, COL_IND_FORMULA, COL_IND_UNIDADE,
+                                  COL_IND_SIT_INICIAL, COL_IND_VALOR, COL_IND_PARAMETRO,
+                                  COL_IND_REALIZADO, COL_IND_ALCANCE  # <-- Adicionadas
+                              ] + COL_MESES  # <-- Adicionados os 12 meses
+
+# Colunas-chave que foram mescladas e precisarão de ffill()
+INDICADORES_COLS_FFILL = [COL_OBJETIVO, COL_INICIATIVA, COL_ACAO]
+
+# --- (ATUALIZADO) Dicionário de Nomes Amigáveis para Exibição ---
 FRIENDLY_NAMES = {
     'acao_estrategica': 'Ação Estratégica',
     'evento_risco': 'Evento de Risco',
@@ -80,7 +91,10 @@ FRIENDLY_NAMES = {
     COL_IND_UNIDADE: 'Unidade de Medida',
     COL_IND_SIT_INICIAL: 'Situação Inicial',
     COL_IND_VALOR: 'Valor (Meta)',
-    COL_IND_PARAMETRO: 'Parâmetro'
+    COL_IND_PARAMETRO: 'Parâmetro',
+    # (NOVOS) Nomes do Monitoramento
+    COL_IND_REALIZADO: 'Realizado (Situação Atual)',
+    COL_IND_ALCANCE: 'Alcance da Meta (%)'
 }
 
 # --- Paletas de Cores e Categorias ---
@@ -105,16 +119,34 @@ def load_css():
     """ Carrega CSS customizado para os KPIs e Cards de Indicadores. """
     st.markdown("""
         <style>
+        /* Estilo para os Cards de KPI */
         .kpi-card {
             background-color: #FFFFFF; border-radius: 8px; padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border: 1px solid #E0E0E0;
-            margin-bottom: 10px;
+            margin-bottom: 10px; height: 130px; /* (NOVO) Altura fixa */
         }
-        .kpi-card h3 { font-size: 1.1rem; font-weight: 600; color: #4F4F4F; margin-bottom: 5px; }
-        .kpi-card h1 { font-size: 2.5rem; font-weight: 700; color: #0E6E52; margin: 0; }
+        .kpi-card h3 { 
+            font-size: 1.1rem; font-weight: 600; color: #4F4F4F; 
+            margin-bottom: 5px; height: 35px; /* (NOVO) Altura fixa */
+        }
+        .kpi-card h1 { 
+            font-size: 2.5rem; font-weight: 700; color: #0E6E52; 
+            margin: 0;
+        }
+
+        /* Cores de Alerta */
         .kpi-card.inaceitavel h1 { color: #D32F2F; }
+
+        /* (NOVO) Cores de Monitoramento */
+        .kpi-card.neutral h1 { color: #003366; } /* Azul Marinho */
+        .kpi-card.alcance-bom h1 { color: #388E3C; } /* Verde Sucesso */
+        .kpi-card.alcance-ruim h1 { color: #D32F2F; } /* Vermelho Falha */
+
+        /* Deltas (da Visão Geral) */
         .kpi-card .delta { font-size: 1rem; font-weight: 600; color: #388E3C; margin-top: 5px; }
         .kpi-card .delta-negativo { color: #D32F2F; }
+
+        /* Card de Indicador (da Análise de Indicadores) */
         .indicator-card {
             background-color: #F8F9FA; border-radius: 8px; padding: 15px;
             border: 1px solid #E0E0E0; margin-bottom: 10px;
@@ -180,21 +212,33 @@ def load_riscos_data(uploaded_file):
     return df_mapa, df_plano
 
 
+# (ATUALIZADO) Função de Carga para Indicadores
 def load_indicadores_data(uploaded_file):
     """ Carrega e limpa os dados de Indicadores da aba '1.1. Plano de Ação'. """
     try:
         df = pd.read_excel(uploaded_file, sheet_name=SHEET_INDICADORES, header=9)
+
+        # Verifica se o número de colunas bate
         if len(df.columns) != len(indicadores_cols):
-            st.error(f"Erro na aba '{SHEET_INDICADORES}': Estrutura de colunas inesperada.")
+            st.error(
+                f"Erro na aba '{SHEET_INDICADORES}': Estrutura de colunas inesperada. Esperava {len(indicadores_cols)} colunas, encontrou {len(df.columns)}.")
             return None
+
+        # Força a renomeação de TODAS as colunas
         df.columns = indicadores_cols
+
+        # Seleciona apenas as colunas que nos interessam (agora incluindo meses e status)
         df_indicadores = df[INDICADORES_COLS_REQUERIDAS].copy()
+
+        # Limpeza de Dados
         df_indicadores[INDICADORES_COLS_FFILL] = df_indicadores[INDICADORES_COLS_FFILL].ffill()
         df_indicadores.dropna(subset=[COL_IND_TITULO], inplace=True)
         df_indicadores[COL_ACAO] = df_indicadores[COL_ACAO].str.strip()
+
         return df_indicadores
+
     except Exception as e:
-        st.error(f"Erro ao ler a aba '{SHEET_INDICADORES}'. Verifique o nome da aba. Erro: {e}")
+        st.error(f"Erro ao ler a aba '{SHEET_INDICADORES}'. Verifique o nome da aba e a estrutura. Erro: {e}")
         return None
 
 
@@ -285,7 +329,7 @@ def render_page_visao_geral(df_mapa):
         fig_class = px.bar(
             df_class, x='classificacao', y='count', title="Contagem de Riscos por Classificação",
             labels={'classificacao': FRIENDLY_NAMES['classificacao'], 'count': FRIENDLY_NAMES['contagem']},
-            text_auto=True, color_discrete_sequence=['#003366']
+            text_auto=True, color_discrete_sequence=['#003366']  # Sua cor azul marinho
         )
         fig_class.update_layout(xaxis_title=FRIENDLY_NAMES['classificacao'], yaxis_title=FRIENDLY_NAMES['contagem'],
                                 margin=dict(l=0, r=0, t=40, b=0))
@@ -295,7 +339,7 @@ def render_page_visao_geral(df_mapa):
         fig_gestor = px.bar(
             df_gestor, x='gestor_risco', y='count', title="Contagem de Riscos por Gestor",
             labels={'gestor_risco': FRIENDLY_NAMES['gestor_risco'], 'count': FRIENDLY_NAMES['contagem']},
-            text_auto=True, color_discrete_sequence=['#0E6E52']
+            text_auto=True, color_discrete_sequence=['#003366']  # Sua cor azul marinho
         )
         fig_gestor.update_layout(xaxis_title=FRIENDLY_NAMES['gestor_risco'], yaxis_title=FRIENDLY_NAMES['contagem'],
                                  margin=dict(l=0, r=0, t=40, b=0))
@@ -355,6 +399,109 @@ def render_page_indicadores(df_indicadores, df_mapa):
                     st.markdown(f"**Risco Residual:** {row['nivel_rr']:.1f} ({row['avaliacao_rr']})")
                     st.markdown(f"**Controle Existente:** {row['desc_controle']} (`{row['nivel_controle']}`)")
                 st.write("")
+
+
+# --- (ATUALIZADA) FUNÇÃO DE PÁGINA: MONITORAMENTO DE INDICADORES ---
+def render_page_monitoramento(df_indicadores):
+    st.header("Monitoramento de Indicadores")
+    st.info("Selecione um indicador específico para acompanhar sua evolução mensal em relação à meta.")
+
+    # --- Filtros Dependentes ---
+    lista_acoes = df_indicadores[COL_ACAO].unique()
+    acao_selecionada = st.selectbox(
+        "1. Selecione a Ação Estratégica:",
+        lista_acoes
+    )
+
+    df_acoes_filtrado = df_indicadores[df_indicadores[COL_ACAO] == acao_selecionada]
+    lista_indicadores = df_acoes_filtrado[COL_IND_TITULO].unique()
+
+    indicador_selecionado = st.selectbox(
+        "2. Selecione o Indicador para Monitorar:",
+        lista_indicadores
+    )
+
+    # --- Extração de Dados ---
+    try:
+        df_indicador_selecionado = df_acoes_filtrado[df_acoes_filtrado[COL_IND_TITULO] == indicador_selecionado]
+        data_indicador = df_indicador_selecionado.iloc[0]
+    except IndexError:
+        st.error("Erro ao selecionar o indicador. Tente novamente.")
+        st.stop()
+
+    st.divider()
+
+    # --- (ATUALIZADO) KPIs de Status com CSS e CÁLCULO CORRIGIDO ---
+    st.subheader(f"Status: {indicador_selecionado}")
+
+    # Prepara os valores
+    meta_val = pd.to_numeric(data_indicador[COL_IND_VALOR], errors='coerce')
+    realizado_val = pd.to_numeric(data_indicador[COL_IND_REALIZADO], errors='coerce')
+
+    # (CORREÇÃO 1) Multiplica o valor decimal por 100
+    alcance_decimal = pd.to_numeric(data_indicador[COL_IND_ALCANCE], errors='coerce')
+    alcance_val = alcance_decimal * 100 if pd.notna(alcance_decimal) else pd.NA
+
+    parametro = data_indicador[COL_IND_PARAMETRO]
+
+    # (CORREÇÃO 2) Formata os valores corretos para exibição
+    meta_str = f"{meta_val:,.2f}" if pd.notna(meta_val) else str(data_indicador[COL_IND_VALOR])
+    realizado_str = f"{realizado_val:,.2f}" if pd.notna(realizado_val) else "N/A"
+    alcance_str = f"{alcance_val:.1f}%" if pd.notna(alcance_val) else "N/A"  # <-- Agora está correto
+
+    # (CORREÇÃO 3) Lógica de Cor agora usa o valor percentual (ex: 100.0)
+    alcance_class = "neutral"  # Padrão é azul
+    if pd.notna(alcance_val):
+        is_good = False
+        if "Quanto maior" in parametro:
+            is_good = (alcance_val >= 100.0)
+        elif "Quanto menor" in parametro:
+            # Assumindo 100% = meta, <= 100% = superou (bom)
+            is_good = (alcance_val <= 100.0)
+
+        alcance_class = "alcance-bom" if is_good else "alcance-ruim"
+
+    kpi1, kpi2, kpi3 = st.columns(3)
+    with kpi1:
+        st.markdown(kpi_card(FRIENDLY_NAMES[COL_IND_VALOR], meta_str, "neutral"), unsafe_allow_html=True)
+    with kpi2:
+        st.markdown(kpi_card(FRIENDLY_NAMES[COL_IND_REALIZADO], realizado_str, "neutral"), unsafe_allow_html=True)
+    with kpi3:
+        st.markdown(kpi_card(FRIENDLY_NAMES[COL_IND_ALCANCE], alcance_str, alcance_class), unsafe_allow_html=True)
+
+    st.write("")  # Espaço
+
+    # --- Gráfico de Evolução (Sem alterações) ---
+    st.subheader("Evolução Mensal vs. Meta")
+
+    df_meses = df_indicador_selecionado[COL_MESES]
+    df_meses_numeric = df_meses.apply(pd.to_numeric, errors='coerce')
+
+    if df_meses_numeric.isnull().all().all():
+        st.warning("Não há dados de acompanhamento mensal (Mês 01 a Mês 12) preenchidos para este indicador.")
+    else:
+        df_melted = df_meses_numeric.melt(var_name="Mês", value_name="Realizado (mês)")
+        df_melted['Mês Num'] = df_melted['Mês'].str.replace('mes_', '').astype(int)
+        df_melted = df_melted.sort_values(by='Mês Num')
+
+        fig = px.line(
+            df_melted,
+            x='Mês',
+            y='Realizado (mês)',
+            title=f"Evolução: {indicador_selecionado}",
+            markers=True
+        )
+
+        if pd.notna(meta_val):
+            fig.add_hline(
+                y=meta_val,
+                line_dash="dash",
+                line_color="red",
+                annotation_text="Meta"
+            )
+
+        fig.update_layout(xaxis_title="Meses de Acompanhamento", yaxis_title=data_indicador[COL_IND_UNIDADE])
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def render_page_ficha_individual(df_mapa, df_plano):
@@ -559,10 +706,7 @@ if 'app_mode' not in st.session_state:
     st.stop()  # Para a execução até que um modo seja escolhido
 
 # --- ETAPA 2: Carregamento de Dados (Baseado no Modo) ---
-# Esta etapa só é executada se o 'app_mode' foi definido
 app_mode = st.session_state.app_mode
-
-# Verifica se os dados necessários para o modo já foram carregados
 data_loaded = 'df_mapa' in st.session_state
 
 if not data_loaded:
@@ -576,8 +720,7 @@ if not data_loaded:
             help=f"Deve conter as abas '{SHEET_MAPA}' e '{SHEET_PLANO}'"
         )
 
-        if uploader_riscos is None:
-            st.stop()
+        if uploader_riscos is None: st.stop()
 
         df_mapa, df_plano = load_riscos_data(uploader_riscos)
 
@@ -604,8 +747,7 @@ if not data_loaded:
                 help=f"Deve conter a aba '{SHEET_INDICADORES}'"
             )
 
-        if uploader_riscos is None or uploader_planejamento is None:
-            st.stop()
+        if uploader_riscos is None or uploader_planejamento is None: st.stop()
 
         df_mapa, df_plano = load_riscos_data(uploader_riscos)
         df_indicadores = load_indicadores_data(uploader_planejamento)
@@ -620,7 +762,6 @@ if not data_loaded:
             st.stop()
 
 # --- ETAPA 3: Exibição do Aplicativo (Dados Carregados) ---
-# O script só chega aqui se o modo está definido E os dados estão carregados
 
 # Recupera os dados do estado
 df_mapa = st.session_state.df_mapa
@@ -643,9 +784,10 @@ if app_mode == 'risk_only':
 else:  # modo 'integrated'
     page_list = [
         "Visão Geral (Dashboard)",
+        "Análise de Indicadores",
+        "Monitoramento de Indicadores",  # <-- (NOVO)
         "Ficha Individual do Risco",
         "Simulador de Controles",
-        "Análise de Indicadores",
         "Análise Detalhada (Tabelas)"
     ]
 
@@ -671,6 +813,9 @@ if page == "Visão Geral (Dashboard)":
 elif page == "Análise de Indicadores":
     render_page_indicadores(df_indicadores, df_mapa)
 
+elif page == "Monitoramento de Indicadores":
+    render_page_monitoramento(df_indicadores)  # <-- (NOVO)
+
 elif page == "Ficha Individual do Risco":
     render_page_ficha_individual(df_mapa, df_plano)
 
@@ -680,5 +825,6 @@ elif page == "Simulador de Controles":
 elif page == "Análise Detalhada (Tabelas)":
     render_page_analise_detalhada(df_mapa, df_plano)
     
+
 
 
